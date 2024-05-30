@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag-and-Drop Image Uploader</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+   <h2 class="text-center">Upload Your Image</h2>
+    <div class="container">
+        
+       
+        <div id="carouselExample" class="carousel slide" data-ride="carousel">
+             
+            <div class="carousel-inner">
+                
+                <div class="carousel-item active">
+                    
+                    <img src="assets/image/carousel1.jpg" class="d-block w-100" alt="Image 1">
+                </div>
+                <div class="carousel-item">
+                    <img src="assets/image/carousel2.jpg" class="d-block w-100" alt="Image 2">
+                </div>
+            </div>
+        </div>
+         
+        <div id="dropzone" class="dropzone "><span>Drag and Drop Image or <a href="">click here</a></span></div>
+        <input type="file" id="fileInput" accept="image/*" style="display:none;" multiple>
+        <div class="file-list" id="fileList"></div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  
+     <script>
+        $(document).ready(function() {
+            const dropzone = $('#dropzone');
+            const fileInput = $('#fileInput');
+            const fileList = $('#fileList');
+
+            function loadImagesFromLocalStorage() {
+                const images = JSON.parse(localStorage.getItem('images')) || [];
+                images.forEach(image => {
+                    addImageToList(image.data, image.description);
+                });
+            }
+
+            function saveImagesToLocalStorage() {
+                const images = [];
+                fileList.find('.file-item').each(function() {
+                    const img = $(this).find('img').attr('src');
+                    const description = $(this).find('textarea').val();
+                    images.push({ data: img, description: description });
+                });
+                localStorage.setItem('images', JSON.stringify(images));
+            }
+
+            function addImageToList(imageData, description = '') {
+                const fileItem = $('<div class="file-item"></div>');
+                const img = $('<img class="round-box">').attr('src', imageData);
+                const textarea = $('<textarea class="form-control" placeholder="Add description"></textarea>').val(description);
+                const checkIcon = $('<button class="btn btn-success btn-sm">✔️</button>').on('click', function() {
+                    alert('Description has been added.');
+                    textarea.prop('disabled', true);
+                    saveImagesToLocalStorage();
+                });
+                const deleteIcon = $('<button class="btn btn-danger btn-sm">❌</button>').on('click', function() {
+                    fileItem.remove();
+                    saveImagesToLocalStorage();
+                });
+
+                fileItem.append(img, textarea, checkIcon, deleteIcon);
+                fileList.append(fileItem);
+            }
+
+            dropzone.on('click', function() {
+                fileInput.click();
+            });
+
+            dropzone.on('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.addClass('dragover');
+            });
+
+            dropzone.on('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.removeClass('dragover');
+            });
+
+            dropzone.on('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.removeClass('dragover');
+                const files = e.originalEvent.dataTransfer.files;
+                handleFiles(files);
+            });
+
+            fileInput.on('change', function(e) {
+                const files = e.target.files;
+                handleFiles(files);
+            });
+
+            function handleFiles(files) {
+                if (fileList.children().length + files.length > 5) {
+                    alert('You can only upload a maximum of 5 images.');
+                    return;
+                }
+
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (file.type.startsWith('image/') && file.size <= 1048576) { // 1MB
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            addImageToList(e.target.result);
+                            saveImagesToLocalStorage();
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        alert('Invalid file. Please upload an image below 1MB.');
+                    }
+                }
+            }
+
+            loadImagesFromLocalStorage();
+        });
+    </script>
+
+  
+
+</body>
+</html>
